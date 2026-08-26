@@ -3,77 +3,129 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>บันทึกค่าใช้จ่ายร้านกาแฟ</title>
+    <title>ระบบใบแทนใบเสร็จอัตโนมัติ</title>
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#8b5a2b">
+    <meta name="theme-color" content="#2563eb">
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { background-color: #f3f4f6; -webkit-tap-highlight-color: transparent; }
+        body { background-color: #f8fafc; -webkit-tap-highlight-color: transparent; font-family: sans-serif; }
         .hidden { display: none !important; }
         .modal { background-color: rgba(0,0,0,0.5); }
     </style>
 </head>
-<body class="bg-gray-100 pb-20">
+<body class="pb-20 text-gray-800">
 
     <!-- Header -->
-    <header class="bg-yellow-800 text-white p-4 shadow-md sticky top-0 z-10 flex justify-between items-center">
-        <h1 class="text-xl font-bold"><i class="fas fa-coffee mr-2"></i> บัญชีร้านกาแฟ</h1>
-        <button id="installBtn" class="hidden bg-white text-yellow-800 px-3 py-1 rounded text-sm font-bold shadow"><i class="fas fa-download mr-1"></i> ติดตั้งแอป</button>
+    <header class="bg-blue-600 text-white p-4 shadow-md sticky top-0 z-10 flex justify-between items-center">
+        <h1 class="text-xl font-bold flex items-center"><i class="fas fa-file-invoice mr-2"></i> ระบบใบแทนใบเสร็จ</h1>
+        <div class="flex gap-2">
+            <button id="settingsBtn" class="bg-blue-700 hover:bg-blue-800 px-3 py-1 rounded text-sm font-bold shadow transition"><i class="fas fa-cog"></i> ตั้งค่า</button>
+            <button id="installBtn" class="hidden bg-white text-blue-600 px-3 py-1 rounded text-sm font-bold shadow"><i class="fas fa-download mr-1"></i> ติดตั้ง</button>
+        </div>
     </header>
 
-    <main class="p-4 max-w-lg mx-auto">
-        <!-- Summary Section -->
-        <div class="bg-white rounded-lg shadow p-4 mb-6 text-center">
-            <h2 class="text-gray-600 text-sm font-semibold mb-1">ยอดรวมค่าใช้จ่ายทั้งหมด</h2>
-            <p class="text-3xl font-bold text-red-600" id="totalAmount">฿0.00</p>
+    <!-- Settings Panel (Hidden by default) -->
+    <div id="settingsPanel" class="hidden max-w-lg mx-auto bg-white p-4 border-b shadow-sm mb-4">
+        <h2 class="font-bold text-blue-800 mb-3"><i class="fas fa-user-cog mr-2"></i> ข้อมูลผู้เบิกจ่าย & API</h2>
+        
+        <div class="space-y-3 text-sm">
+            <div>
+                <label class="block text-gray-700 font-medium mb-1">Gemini API Key (สำหรับ AI อ่านบิล)</label>
+                <input type="password" id="apiKeyInput" placeholder="ใส่ API Key ของคุณที่นี่" class="w-full border-gray-300 rounded p-2 border focus:border-blue-500 focus:outline-none">
+            </div>
+            <div>
+                <label class="block text-gray-700 font-medium mb-1">ชื่อผู้ซื้อ/ผู้รับบริการ</label>
+                <input type="text" id="buyerNameInput" class="w-full border-gray-300 rounded p-2 border focus:border-blue-500 focus:outline-none">
+            </div>
+            <div>
+                <label class="block text-gray-700 font-medium mb-1">เลขประจำตัวผู้เสียภาษี (ถ้ามี)</label>
+                <input type="text" id="buyerTaxIdInput" class="w-full border-gray-300 rounded p-2 border focus:border-blue-500 focus:outline-none">
+            </div>
+            <div>
+                <label class="block text-gray-700 font-medium mb-1">ที่อยู่</label>
+                <input type="text" id="buyerAddressInput" class="w-full border-gray-300 rounded p-2 border focus:border-blue-500 focus:outline-none">
+            </div>
+            <button id="saveSettingsBtn" class="w-full bg-gray-200 text-gray-800 font-bold py-2 rounded mt-2 hover:bg-gray-300">บันทึกการตั้งค่าซ่อนหน้าต่างนี้</button>
         </div>
+    </div>
 
+    <main class="p-4 max-w-lg mx-auto">
         <!-- Add Expense Form -->
-        <div class="bg-white rounded-lg shadow p-4 mb-6">
-            <h2 class="text-lg font-bold mb-4 border-b pb-2"><i class="fas fa-plus-circle text-green-600"></i> เพิ่มรายการใหม่</h2>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-6">
+            <h2 class="text-lg font-bold mb-4 flex items-center text-gray-800">
+                <i class="fas fa-upload mr-2 text-blue-500"></i> 1. อัปโหลดใบเสร็จ
+            </h2>
+            
+            <div id="uploadBox" class="border-2 border-dashed border-blue-300 bg-blue-50 hover:bg-blue-100 cursor-pointer rounded-xl p-6 text-center transition mb-4">
+                <i class="fas fa-image text-4xl text-blue-400 mb-2"></i>
+                <p class="text-blue-800 font-medium">แตะเพื่อถ่ายรูป / เลือกไฟล์รูปภาพ</p>
+            </div>
+            <input type="file" id="imageInput" accept="image/*" class="hidden">
+
+            <div id="previewContainer" class="hidden relative mb-4 text-center">
+                <img id="imagePreview" class="max-h-64 mx-auto rounded-lg shadow-sm border" src="">
+                <button type="button" id="removeImgBtn" class="absolute top-2 right-2 bg-gray-800 text-white rounded-full w-8 h-8 flex items-center justify-center shadow-lg"><i class="fas fa-times"></i></button>
+            </div>
+
+            <div id="loadingAi" class="hidden flex items-center justify-center text-blue-600 bg-blue-50 p-3 rounded-lg mb-4 text-sm font-medium">
+                <i class="fas fa-spinner fa-spin mr-2"></i> AI กำลังสกัดข้อมูลจากรูปภาพ...
+            </div>
+
+            <hr class="my-4">
+
+            <h2 class="text-lg font-bold mb-4 flex items-center text-gray-800">
+                <i class="fas fa-edit mr-2 text-green-500"></i> 2. ตรวจสอบและบันทึกข้อมูล
+            </h2>
+
+            <div id="errorBox" class="hidden mb-4 p-3 bg-red-50 text-red-700 rounded-lg text-sm flex items-start">
+                <i class="fas fa-exclamation-circle mt-1 mr-2"></i> <span id="errorText"></span>
+            </div>
+
             <form id="expenseForm">
                 <div class="mb-3">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">วันที่</label>
-                    <input type="date" id="dateInput" required class="w-full border-gray-300 rounded-md shadow-sm p-2 border focus:border-yellow-500 focus:outline-none">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">ชื่อร้านค้า / บริษัท</label>
+                    <input type="text" id="storeNameInput" required class="w-full border-gray-300 rounded p-2 border focus:border-blue-500 focus:outline-none">
                 </div>
                 
+                <div class="grid grid-cols-2 gap-3 mb-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">ยอดรวม (บาท)</label>
+                        <input type="number" id="amountInput" required step="0.01" class="w-full border-gray-300 rounded p-2 border focus:border-blue-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">วันที่ (สำคัญ: ระบุโฟลเดอร์)</label>
+                        <input type="text" id="dateInput" required placeholder="DD/MM/YYYY" class="w-full border-blue-300 bg-blue-50 rounded p-2 border focus:border-blue-500 focus:outline-none">
+                    </div>
+                </div>
+
                 <div class="mb-3">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">หมวดหมู่</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">หมวดหมู่ค่าใช้จ่าย</label>
                     <div class="flex gap-2">
-                        <select id="categoryInput" required class="w-full border-gray-300 rounded-md shadow-sm p-2 border focus:border-yellow-500 focus:outline-none bg-white">
-                            <!-- Categories will be loaded here -->
+                        <select id="categoryInput" required class="w-full border-gray-300 rounded p-2 border focus:border-blue-500 focus:outline-none bg-white">
+                            <!-- Categories loaded here -->
                         </select>
-                        <button type="button" id="manageCategoryBtn" class="bg-gray-200 text-gray-700 px-4 rounded-md hover:bg-gray-300 transition" title="จัดการหมวดหมู่"><i class="fas fa-cog"></i></button>
+                        <button type="button" id="manageCategoryBtn" class="bg-gray-200 text-gray-700 px-4 rounded hover:bg-gray-300 transition" title="จัดการหมวดหมู่"><i class="fas fa-cog"></i></button>
                     </div>
                 </div>
 
-                <div class="mb-3">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">จำนวนเงิน (บาท)</label>
-                    <input type="number" id="amountInput" required min="0" step="0.01" placeholder="0.00" class="w-full border-gray-300 rounded-md shadow-sm p-2 border focus:border-yellow-500 focus:outline-none">
+                <div class="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-100 flex items-start gap-2">
+                    <input type="checkbox" id="isOriginalReceipt" class="mt-1 w-5 h-5 text-blue-600 rounded">
+                    <label for="isOriginalReceipt" class="text-sm">
+                        <span class="font-bold text-blue-900 block">เอกสารนี้เป็น "ใบเสร็จรับเงิน" ที่สมบูรณ์แล้ว</span>
+                        <span class="text-blue-700 text-xs">ระบบจะบันทึกรูปลงโฟลเดอร์ (ไม่สร้างใบแทนใบเสร็จ)</span>
+                    </label>
                 </div>
 
-                <div class="mb-3">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">รายละเอียด / หมายเหตุ (เลือกได้)</label>
-                    <input type="text" id="noteInput" placeholder="เช่น ซื้อเมล็ดคั่วกลาง 2 กก." class="w-full border-gray-300 rounded-md shadow-sm p-2 border focus:border-yellow-500 focus:outline-none">
-                </div>
-
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">รูปใบเสร็จ (เลือกได้)</label>
-                    <input type="file" id="imageInput" accept="image/*" capture="environment" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-yellow-50 file:text-yellow-700 hover:file:bg-yellow-100">
-                    <div class="mt-2 relative hidden" id="previewContainer">
-                        <img id="imagePreview" class="max-h-40 rounded-md border" src="" alt="Preview">
-                        <button type="button" id="removeImgBtn" class="absolute top-1 right-1 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs"><i class="fas fa-times"></i></button>
-                    </div>
-                </div>
-
-                <button type="submit" class="w-full bg-yellow-800 text-white font-bold py-3 px-4 rounded-md hover:bg-yellow-900 transition shadow"><i class="fas fa-save mr-2"></i> บันทึกข้อมูล</button>
+                <button type="submit" id="submitBtn" class="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 transition shadow">
+                    <i class="fas fa-check-circle mr-2"></i> <span id="submitBtnText">สร้างใบแทนใบเสร็จ (PDF)</span>
+                </button>
             </form>
         </div>
 
         <!-- Expense List -->
-        <div>
-            <h2 class="text-lg font-bold mb-4"><i class="fas fa-list text-yellow-800"></i> ประวัติรายการ</h2>
+        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+            <h2 class="text-lg font-bold mb-4 text-purple-600"><i class="fas fa-history mr-2"></i> ประวัติการบันทึกเอกสาร</h2>
             <div id="expenseList" class="space-y-3">
                 <!-- Items will be loaded here -->
             </div>
@@ -82,38 +134,28 @@
 
     <!-- Category Management Modal -->
     <div id="categoryModal" class="modal fixed inset-0 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white rounded-lg shadow-xl w-full max-w-md p-5 max-h-screen flex flex-col">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-5 max-h-[90vh] flex flex-col">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-xl font-bold">จัดการหมวดหมู่</h2>
                 <button id="closeModalBtn" class="text-gray-500 hover:text-gray-800 text-2xl px-2">&times;</button>
             </div>
             
             <form id="addCategoryForm" class="flex gap-2 mb-4">
-                <input type="text" id="newCategoryInput" required placeholder="เพิ่มหมวดหมู่ใหม่" class="flex-1 border border-gray-300 rounded-md p-2 focus:border-yellow-500 focus:outline-none">
-                <button type="submit" class="bg-green-600 text-white px-4 rounded-md hover:bg-green-700"><i class="fas fa-plus"></i></button>
+                <input type="text" id="newCategoryInput" required placeholder="เพิ่มหมวดหมู่ใหม่" class="flex-1 border border-gray-300 rounded p-2 focus:border-blue-500 focus:outline-none">
+                <button type="submit" class="bg-green-600 text-white px-4 rounded hover:bg-green-700"><i class="fas fa-plus"></i></button>
             </form>
 
             <div class="flex-1 overflow-y-auto" style="max-height: 50vh;">
-                <ul id="categoryList" class="space-y-2">
-                    <!-- Category items -->
-                </ul>
+                <ul id="categoryList" class="space-y-2"></ul>
             </div>
         </div>
     </div>
 
-    <!-- Image Modal for viewing receipts -->
-    <div id="imageModal" class="modal fixed inset-0 z-50 hidden flex items-center justify-center p-4" onclick="this.classList.add('hidden')">
-        <img id="fullImage" src="" class="max-w-full max-h-[90vh] rounded shadow-lg object-contain bg-white p-1">
-    </div>
-
     <script src="app.js"></script>
     <script>
-        // Register Service Worker for PWA
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                    .then(reg => console.log('Service Worker Registered!', reg))
-                    .catch(err => console.error('Service Worker Registration Failed!', err));
+                navigator.serviceWorker.register('sw.js');
             });
         }
     </script>
