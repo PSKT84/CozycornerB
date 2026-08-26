@@ -210,7 +210,7 @@ async function processImageWithAI() {
     showError(null);
 
     try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${appSettings.apiKey}`;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${appSettings.apiKey}`;
         const prompt = `
             นี่คือรูปภาพใบเสร็จ/บิลค่าใช้จ่าย กรุณาสกัดข้อมูลให้อยู่ในรูปแบบ JSON เท่านั้น:
             {
@@ -240,7 +240,11 @@ async function processImageWithAI() {
             body: JSON.stringify(payload)
         });
 
-        if (!response.ok) throw new Error("API Error หรือ API Key ไม่ถูกต้อง");
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            const errMsg = errorData.error?.message || response.statusText;
+            throw new Error(`API Error: ${response.status} - ${errMsg}`);
+        }
         
         const data = await response.json();
         const jsonText = data.candidates[0].content.parts[0].text;
@@ -267,7 +271,7 @@ async function processImageWithAI() {
         updateSubmitBtnText();
 
     } catch (err) {
-        showError("เกิดข้อผิดพลาดในการวิเคราะห์รูปภาพ กรุณากรอกด้วยตนเอง หรือตรวจสอบ API Key");
+        showError(`เกิดข้อผิดพลาด: ${err.message}`);
         console.error(err);
     } finally {
         loadingAi.classList.add('hidden');
