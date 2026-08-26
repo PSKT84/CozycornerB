@@ -210,7 +210,7 @@ async function processImageWithAI() {
     showError(null);
 
     try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${appSettings.apiKey}`;
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${appSettings.apiKey}`;
         const prompt = `
             นี่คือรูปภาพใบเสร็จ/บิลค่าใช้จ่าย กรุณาสกัดข้อมูลให้อยู่ในรูปแบบ JSON เท่านั้น:
             {
